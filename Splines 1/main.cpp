@@ -4,8 +4,8 @@
 
 
 struct Vec2 {
-	int x;
-	int y;
+	float x;
+	float y;
 
 	Vec2& operator+= (const Vec2& rhs) {
 		this->x += rhs.x;
@@ -16,6 +16,31 @@ struct Vec2 {
 
 struct Spline {
 	std::vector<Vec2> points;
+
+	Vec2 GetSplinePoint(float t)
+	{
+		int p0, p1, p2, p3;
+		p1 = (int)t + 1;
+		p2 = p1 + 1;
+		p3 = p2 + 1;
+		p0 = p1 - 1;
+		
+		t = t - (int)t;
+
+		float tt = t * t;
+		float ttt = tt * t;
+
+		float q1 = -ttt + 2.0f * tt - t;
+		float q2 = 3.0f * ttt - 5.0f * tt + 2.0f;
+		float q3 = -3.0f * ttt + 4.0f * tt + t;
+		float q4 = ttt - tt;
+
+		float tx = 0.5f * (points[p0].x * q1 + points[p1].x * q2 + points[p2].x * q3 + points[p3].x * q4);
+		float ty = 0.5f * (points[p0].y * q1 + points[p1].y * q2 + points[p2].y * q3 + points[p3].y * q4);
+
+		return{ tx, ty };
+	}
+	
 	
 };
 // Override base class with your custom functionality
@@ -33,7 +58,7 @@ public:
 public:
 	bool OnUserCreate() override
 	{
-		spline.points = { {10, 41}, {40, 41}, {70, 41}, {100,41} };
+		spline.points = { {10.0f, 41.0f}, {40.0f, 41.0f}, {70.0f, 41.0f}, {100.0f,41.0f} };
 		return true;
 	}
 	bool OnUserUpdate(float fElapsedTime) override
@@ -43,7 +68,7 @@ public:
 		if (GetKey(olc::Key::RIGHT).bPressed) {
 			selected++;
 			if (selected > (int)spline.points.size() - 1) {
-				selected == 0;
+				selected = 0;
 			}
 		}
 		if (GetKey(olc::Key::LEFT).bPressed) {
@@ -53,27 +78,32 @@ public:
 			}
 		}
 
-		if (GetKey(olc::Key::W).bPressed) {
-			spline.points[selected] += {0, -1};
+		if (GetKey(olc::Key::W).bHeld) {
+			spline.points[selected] += {0.0f, -30.0f*fElapsedTime};
 		}
 
-		if (GetKey(olc::Key::S).bPressed) {
-			spline.points[selected] += {0, 1};
+		if (GetKey(olc::Key::S).bHeld) {
+			spline.points[selected] += {0.0f, 30.0f*fElapsedTime};
 		}
 
-		if (GetKey(olc::Key::D).bPressed) {
-			spline.points[selected] += {1, 0};
+		if (GetKey(olc::Key::D).bHeld) {
+			spline.points[selected] += {30.0f*fElapsedTime, 0.0f};
 		}
 
-		if (GetKey(olc::Key::A).bPressed) {
-			spline.points[selected] += {-1, 0};
+		if (GetKey(olc::Key::A).bHeld) {
+			spline.points[selected] += {-30.0f*fElapsedTime, 0.0f};
 		}
 
+		for (float t = 0.0f; t < 1.0f; t += 0.01f) {
+			Vec2 pos = spline.GetSplinePoint(t);
+			Draw((int)pos.x, (int)pos.y);
+		}
+			 
 		for (int i = 0; i < (int)spline.points.size(); i++) {
 			if (i == selected) {
-				FillRect({ spline.points[i].x, spline.points[i].y }, { 5, 5 }, olc::YELLOW);
+				FillRect({ (int)spline.points[i].x, (int)spline.points[i].y }, { 5, 5 }, olc::YELLOW);
 			} else {
-				FillRect({ spline.points[i].x, spline.points[i].y }, { 5, 5 }, olc::RED);
+				FillRect({ (int)spline.points[i].x, (int)spline.points[i].y }, { 5, 5 }, olc::RED);
 			}
 		} 
 
